@@ -1,0 +1,131 @@
+NAME: apizinha
+LAST DEPLOYED: Wed Aug 30 18:07:38 2023
+NAMESPACE: default
+STATUS: pending-install
+REVISION: 1
+TEST SUITE: None
+USER-SUPPLIED VALUES:
+{}
+
+COMPUTED VALUES:
+api:
+  image: fabricioveronez/pedelogo-catalogo
+  serviceType: LoadBalancer
+  tag: v1
+mongodb:
+  credentials:
+    userName: mongouser
+    userPassword: mongopwd
+  database: admin
+  image: mongo
+  tag: 4.2.8
+
+HOOKS:
+MANIFEST:
+---
+# Source: api-produto/templates/mongodb-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+    name: apizinha-mongodb-secret
+type: Opaque
+data:
+    MONGO_INITDB_ROOT_USERNAME: "bW9uZ291c2Vy"
+    MONGO_INITDB_ROOT_PASSWORD: "bW9uZ29wd2Q="
+---
+# Source: api-produto/templates/api-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: apizinha-api-configmap
+data:
+    Mongo__Host: apizinha-mongodb-service
+    Mongo__DataBase: admin
+---
+# Source: api-produto/templates/api-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: apizinha-api-service
+spec:
+  selector:
+    app: apizinha-api
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer
+---
+# Source: api-produto/templates/mongodb-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: apizinha-mongodb-service
+spec:
+  selector:
+    app: apizinha-mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+# Source: api-produto/templates/api-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apizinha-api-deployment
+spec:
+  selector:
+    matchLabels:
+      app: apizinha-api
+  template: 
+    metadata:          
+      labels:
+        app: apizinha-api
+    spec:            
+      containers:
+      - name: api
+        image: fabricioveronez/pedelogo-catalogo:v1
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+        resources: {}
+        env:
+          - name: Mongo__User
+            valueFrom:
+              secretKeyRef:
+                key: MONGO_INITDB_ROOT_USERNAME
+                name: apizinha-mongodb-secret
+          - name: Mongo__Password
+            valueFrom:
+              secretKeyRef:
+                key: MONGO_INITDB_ROOT_PASSWORD
+                name: apizinha-mongodb-secret
+        envFrom:
+          - configMapRef:
+              name: apizinha-api-configmap
+---
+# Source: api-produto/templates/mongodb-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apizinha-mongodb-deployment
+spec:
+  selector:
+    matchLabels:
+      app: apizinha-mongodb
+  template:
+    metadata:     
+      labels:
+        app: apizinha-mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:4.2.8
+        ports:
+        - containerPort: 27017
+        resources: {}
+        envFrom:
+          - secretRef:
+              name: apizinha-mongodb-secret
+
+NOTES:
+apizinha has been installed! Good luck!

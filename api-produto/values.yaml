@@ -1,0 +1,12 @@
+api:
+  image: fabricioveronez/pedelogo-catalogo
+  tag: v1
+  serviceType: LoadBalancer
+
+mongodb:
+  image: mongo
+  tag: 4.2.8
+  credentials:
+    userName: mongouser
+    userPassword: mongopwd
+  database: admin

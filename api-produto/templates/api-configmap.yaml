@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: {{ template "api.configmapName" . }}
+data:
+    Mongo__Host: {{ template "mongodb.serviceName" . }}
+    Mongo__DataBase: {{ .Values.mongodb.database }}
